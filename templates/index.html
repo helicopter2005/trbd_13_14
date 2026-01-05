@@ -1,0 +1,745 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Система управления доставкой и музыкальными альбомами</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            padding: 30px;
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+        }
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 30px;
+            border-bottom: 2px solid #e0e0e0;
+        }
+        .tab {
+            padding: 15px 30px;
+            background: #f5f5f5;
+            border: none;
+            cursor: pointer;
+            font-size: 16px;
+            border-radius: 10px 10px 0 0;
+            transition: all 0.3s;
+        }
+        .tab.active {
+            background: #667eea;
+            color: white;
+        }
+        .tab-content {
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
+        }
+        .filters {
+            background: #f9f9f9;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+        .filter-group {
+            flex: 1;
+            min-width: 200px;
+        }
+        .filter-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+            color: #555;
+        }
+        .filter-group input, .filter-group select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+        .btn {
+            padding: 12px 25px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: all 0.3s;
+            margin: 5px;
+        }
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+        .btn-primary:hover {
+            background: #5568d3;
+        }
+        .btn-success {
+            background: #28a745;
+            color: white;
+        }
+        .btn-success:hover {
+            background: #218838;
+        }
+        .btn-danger {
+            background: #dc3545;
+            color: white;
+        }
+        .btn-danger:hover {
+            background: #c82333;
+        }
+        .btn-warning {
+            background: #ffc107;
+            color: #333;
+        }
+        .btn-warning:hover {
+            background: #e0a800;
+        }
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        .data-table th, .data-table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        .data-table th {
+            background: #667eea;
+            color: white;
+            font-weight: 600;
+        }
+        .data-table tr:hover {
+            background: #f5f5f5;
+        }
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+        }
+        .modal.active {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .modal-content {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            max-width: 800px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+            color: #555;
+        }
+        .form-group input, .form-group textarea, .form-group select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+        .form-group textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+        .alert {
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+        .alert-success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .alert-error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .report-section {
+            background: #f9f9f9;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+        .report-section h3 {
+            margin-bottom: 15px;
+            color: #667eea;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚚 Система управления доставкой и музыкой 🎵</h1>
+
+        <div class="tabs">
+            <button class="tab active" onclick="switchTab('parcels')">Посылки</button>
+            <button class="tab" onclick="switchTab('albums')">Альбомы</button>
+            <button class="tab" onclick="switchTab('reports')">Отчеты</button>
+        </div>
+
+        <div id="alert-container"></div>
+
+        <!-- Вкладка посылок -->
+        <div id="parcels-tab" class="tab-content active">
+            <div class="filters">
+                <div class="filter-group">
+                    <label>Статус:</label>
+                    <select id="filter-status">
+                        <option value="">Все</option>
+                        <option value="pending">В ожидании</option>
+                        <option value="in_transit">В пути</option>
+                        <option value="delivered">Доставлено</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label>Курьер:</label>
+                    <input type="text" id="filter-courier" placeholder="Имя курьера">
+                </div>
+                <div class="filter-group">
+                    <label>Мин. вес (кг):</label>
+                    <input type="number" id="filter-weight" placeholder="0">
+                </div>
+                <div class="filter-group" style="display: flex; align-items: flex-end;">
+                    <button class="btn btn-primary" onclick="loadParcels()">Применить фильтры</button>
+                </div>
+            </div>
+
+            <button class="btn btn-success" onclick="openParcelModal()">+ Добавить посылку</button>
+
+            <table class="data-table" id="parcels-table">
+                <thead>
+                    <tr>
+                        <th>Трек-номер</th>
+                        <th>Отправитель</th>
+                        <th>Получатель</th>
+                        <th>Вес (кг)</th>
+                        <th>Курьер</th>
+                        <th>Статус</th>
+                        <th>Действия</th>
+                    </tr>
+                </thead>
+                <tbody id="parcels-tbody"></tbody>
+            </table>
+        </div>
+
+        <!-- Вкладка альбомов -->
+        <div id="albums-tab" class="tab-content">
+            <div class="filters">
+                <div class="filter-group">
+                    <label>Исполнитель:</label>
+                    <input type="text" id="filter-artist" placeholder="Имя исполнителя">
+                </div>
+                <div class="filter-group">
+                    <label>Жанр:</label>
+                    <input type="text" id="filter-genre" placeholder="Жанр">
+                </div>
+                <div class="filter-group">
+                    <label>Мин. рейтинг:</label>
+                    <input type="number" id="filter-rating" placeholder="0" min="0" max="5" step="0.1">
+                </div>
+                <div class="filter-group" style="display: flex; align-items: flex-end;">
+                    <button class="btn btn-primary" onclick="loadAlbums()">Применить фильтры</button>
+                </div>
+            </div>
+
+            <button class="btn btn-success" onclick="openAlbumModal()">+ Добавить альбом</button>
+
+            <table class="data-table" id="albums-table">
+                <thead>
+                    <tr>
+                        <th>Название</th>
+                        <th>Исполнитель</th>
+                        <th>Жанр</th>
+                        <th>Год выпуска</th>
+                        <th>Рейтинг</th>
+                        <th>Действия</th>
+                    </tr>
+                </thead>
+                <tbody id="albums-tbody"></tbody>
+            </table>
+        </div>
+
+        <!-- Вкладка отчетов -->
+        <div id="reports-tab" class="tab-content">
+            <div class="report-section">
+                <h3>📊 Посылки по статусам</h3>
+                <button class="btn btn-primary" onclick="loadParcelsByStatus()">Сформировать отчет</button>
+                <div id="report-parcels-status"></div>
+            </div>
+
+            <div class="report-section">
+                <h3>🎸 Альбомы по жанрам</h3>
+                <button class="btn btn-primary" onclick="loadAlbumsByGenre()">Сформировать отчет</button>
+                <div id="report-albums-genre"></div>
+            </div>
+
+            <div class="report-section">
+                <h3>🚴 Загруженность курьеров</h3>
+                <button class="btn btn-primary" onclick="loadCouriersWorkload()">Сформировать отчет</button>
+                <div id="report-couriers"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Модальное окно для посылки -->
+    <div id="parcel-modal" class="modal">
+        <div class="modal-content">
+            <h2 id="parcel-modal-title">Добавить посылку</h2>
+            <form id="parcel-form">
+                <h3>Отправитель</h3>
+                <div class="form-group">
+                    <label>ФИО:</label>
+                    <input type="text" id="sender-name" required>
+                </div>
+                <div class="form-group">
+                    <label>Адрес:</label>
+                    <input type="text" id="sender-address" required>
+                </div>
+                <div class="form-group">
+                    <label>Серия паспорта:</label>
+                    <input type="text" id="sender-passport-series" required>
+                </div>
+                <div class="form-group">
+                    <label>Номер паспорта:</label>
+                    <input type="text" id="sender-passport-number" required>
+                </div>
+
+                <h3>Получатель</h3>
+                <div class="form-group">
+                    <label>ФИО:</label>
+                    <input type="text" id="recipient-name" required>
+                </div>
+                <div class="form-group">
+                    <label>Адрес:</label>
+                    <input type="text" id="recipient-address" required>
+                </div>
+                <div class="form-group">
+                    <label>Серия паспорта:</label>
+                    <input type="text" id="recipient-passport-series" required>
+                </div>
+                <div class="form-group">
+                    <label>Номер паспорта:</label>
+                    <input type="text" id="recipient-passport-number" required>
+                </div>
+
+                <h3>Информация о посылке</h3>
+                <div class="form-group">
+                    <label>Вес (кг):</label>
+                    <input type="number" id="parcel-weight" step="0.1" required>
+                </div>
+                <div class="form-group">
+                    <label>Описание:</label>
+                    <input type="text" id="parcel-description" required>
+                </div>
+
+                <h3>Курьер</h3>
+                <div class="form-group">
+                    <label>ФИО курьера:</label>
+                    <input type="text" id="courier-name" required>
+                </div>
+                <div class="form-group">
+                    <label>Телефон:</label>
+                    <input type="text" id="courier-phone" required>
+                </div>
+
+                <div class="form-group">
+                    <label>Трек-номер:</label>
+                    <input type="text" id="tracking-number" required>
+                </div>
+                <div class="form-group">
+                    <label>Статус:</label>
+                    <select id="parcel-status" required>
+                        <option value="pending">В ожидании</option>
+                        <option value="in_transit">В пути</option>
+                        <option value="delivered">Доставлено</option>
+                    </select>
+                </div>
+
+                <button type="submit" class="btn btn-success">Сохранить</button>
+                <button type="button" class="btn btn-danger" onclick="closeModal('parcel-modal')">Отмена</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Модальное окно для альбома -->
+    <div id="album-modal" class="modal">
+        <div class="modal-content">
+            <h2 id="album-modal-title">Добавить альбом</h2>
+            <form id="album-form">
+                <div class="form-group">
+                    <label>Название:</label>
+                    <input type="text" id="album-title" required>
+                </div>
+                <div class="form-group">
+                    <label>Исполнитель:</label>
+                    <input type="text" id="album-artist" required>
+                </div>
+                <div class="form-group">
+                    <label>Дата выпуска:</label>
+                    <input type="date" id="album-release-date" required>
+                </div>
+                <div class="form-group">
+                    <label>Жанр:</label>
+                    <input type="text" id="album-genre" required>
+                </div>
+                <div class="form-group">
+                    <label>Лейбл:</label>
+                    <input type="text" id="album-label" required>
+                </div>
+                <div class="form-group">
+                    <label>Рейтинг (0-5):</label>
+                    <input type="number" id="album-rating" min="0" max="5" step="0.1" required>
+                </div>
+                <div class="form-group">
+                    <label>Страна:</label>
+                    <input type="text" id="album-country" required>
+                </div>
+
+                <button type="submit" class="btn btn-success">Сохранить</button>
+                <button type="button" class="btn btn-danger" onclick="closeModal('album-modal')">Отмена</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        let currentParcelId = null;
+        let currentAlbumId = null;
+
+        function switchTab(tab) {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+
+            event.target.classList.add('active');
+            document.getElementById(tab + '-tab').classList.add('active');
+
+            if (tab === 'parcels') loadParcels();
+            if (tab === 'albums') loadAlbums();
+        }
+
+        function showAlert(message, type = 'success') {
+            const alertDiv = document.createElement('div');
+            alertDiv.className = `alert alert-${type}`;
+            alertDiv.textContent = message;
+            document.getElementById('alert-container').appendChild(alertDiv);
+            setTimeout(() => alertDiv.remove(), 3000);
+        }
+
+        // ===== ПОСЫЛКИ =====
+        async function loadParcels() {
+            const status = document.getElementById('filter-status').value;
+            const courier = document.getElementById('filter-courier').value;
+            const weight = document.getElementById('filter-weight').value;
+
+            let url = '/api/parcels?';
+            if (status) url += `status=${status}&`;
+            if (courier) url += `courier=${courier}&`;
+            if (weight) url += `min_weight=${weight}&`;
+
+            const response = await fetch(url);
+            const parcels = await response.json();
+
+            const tbody = document.getElementById('parcels-tbody');
+            tbody.innerHTML = '';
+
+            parcels.forEach(parcel => {
+                const row = tbody.insertRow();
+                row.innerHTML = `
+                    <td>${parcel.tracking_number}</td>
+                    <td>${parcel.sender.full_name}</td>
+                    <td>${parcel.recipient.full_name}</td>
+                    <td>${parcel.parcel_info.weight_kg}</td>
+                    <td>${parcel.courier.full_name}</td>
+                    <td>${parcel.status}</td>
+                    <td>
+                        <button class="btn btn-warning" onclick="editParcel('${parcel._id}')">✏️</button>
+                        <button class="btn btn-danger" onclick="deleteParcel('${parcel._id}')">🗑️</button>
+                    </td>
+                `;
+            });
+        }
+
+        function openParcelModal(id = null) {
+            currentParcelId = id;
+            document.getElementById('parcel-modal-title').textContent = id ? 'Редактировать посылку' : 'Добавить посылку';
+            document.getElementById('parcel-form').reset();
+            document.getElementById('parcel-modal').classList.add('active');
+
+            if (id) {
+                fetch(`/api/parcels/${id}`)
+                    .then(r => r.json())
+                    .then(data => {
+                        document.getElementById('sender-name').value = data.sender.full_name;
+                        document.getElementById('sender-address').value = data.sender.address;
+                        document.getElementById('sender-passport-series').value = data.sender.passport.series;
+                        document.getElementById('sender-passport-number').value = data.sender.passport.number;
+                        document.getElementById('recipient-name').value = data.recipient.full_name;
+                        document.getElementById('recipient-address').value = data.recipient.address;
+                        document.getElementById('recipient-passport-series').value = data.recipient.passport.series;
+                        document.getElementById('recipient-passport-number').value = data.recipient.passport.number;
+                        document.getElementById('parcel-weight').value = data.parcel_info.weight_kg;
+                        document.getElementById('parcel-description').value = data.parcel_info.description;
+                        document.getElementById('courier-name').value = data.courier.full_name;
+                        document.getElementById('courier-phone').value = data.courier.phone;
+                        document.getElementById('tracking-number').value = data.tracking_number;
+                        document.getElementById('parcel-status').value = data.status;
+                    });
+            }
+        }
+
+        function editParcel(id) {
+            openParcelModal(id);
+        }
+
+        async function deleteParcel(id) {
+            if (!confirm('Удалить эту посылку?')) return;
+
+            const response = await fetch(`/api/parcels/${id}`, { method: 'DELETE' });
+            const data = await response.json();
+            showAlert(data.message);
+            loadParcels();
+        }
+
+        document.getElementById('parcel-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const parcelData = {
+                sender: {
+                    full_name: document.getElementById('sender-name').value,
+                    address: document.getElementById('sender-address').value,
+                    passport: {
+                        series: document.getElementById('sender-passport-series').value,
+                        number: document.getElementById('sender-passport-number').value,
+                        issued_by: "ОВД",
+                        issue_date: "2020-01-01"
+                    }
+                },
+                recipient: {
+                    full_name: document.getElementById('recipient-name').value,
+                    address: document.getElementById('recipient-address').value,
+                    passport: {
+                        series: document.getElementById('recipient-passport-series').value,
+                        number: document.getElementById('recipient-passport-number').value,
+                        issued_by: "ОВД",
+                        issue_date: "2020-01-01"
+                    }
+                },
+                parcel_info: {
+                    weight_kg: parseFloat(document.getElementById('parcel-weight').value),
+                    dimensions: { length_cm: 30, width_cm: 20, height_cm: 15 },
+                    description: document.getElementById('parcel-description').value
+                },
+                courier: {
+                    full_name: document.getElementById('courier-name').value,
+                    phone: document.getElementById('courier-phone').value,
+                    vehicle: "Автомобиль"
+                },
+                dates: {
+                    sent_date: new Date().toISOString(),
+                    delivered_date: null
+                },
+                status: document.getElementById('parcel-status').value,
+                tracking_number: document.getElementById('tracking-number').value
+            };
+
+            const url = currentParcelId ? `/api/parcels/${currentParcelId}` : '/api/parcels';
+            const method = currentParcelId ? 'PUT' : 'POST';
+
+            const response = await fetch(url, {
+                method: method,
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(parcelData)
+            });
+
+            const data = await response.json();
+            showAlert(data.message);
+            closeModal('parcel-modal');
+            loadParcels();
+        });
+
+        // ===== АЛЬБОМЫ =====
+        async function loadAlbums() {
+            const artist = document.getElementById('filter-artist').value;
+            const genre = document.getElementById('filter-genre').value;
+            const rating = document.getElementById('filter-rating').value;
+
+            let url = '/api/albums?';
+            if (artist) url += `artist=${artist}&`;
+            if (genre) url += `genre=${genre}&`;
+            if (rating) url += `min_rating=${rating}&`;
+
+            const response = await fetch(url);
+            const albums = await response.json();
+
+            const tbody = document.getElementById('albums-tbody');
+            tbody.innerHTML = '';
+
+            albums.forEach(album => {
+                const row = tbody.insertRow();
+                row.innerHTML = `
+                    <td>${album.title}</td>
+                    <td>${album.artist}</td>
+                    <td>${album.genre}</td>
+                    <td>${album.release_date}</td>
+                    <td>${album.rating}</td>
+                    <td>
+                        <button class="btn btn-warning" onclick="editAlbum('${album._id}')">✏️</button>
+                        <button class="btn btn-danger" onclick="deleteAlbum('${album._id}')">🗑️</button>
+                    </td>
+                `;
+            });
+        }
+
+        function openAlbumModal(id = null) {
+            currentAlbumId = id;
+            document.getElementById('album-modal-title').textContent = id ? 'Редактировать альбом' : 'Добавить альбом';
+            document.getElementById('album-form').reset();
+            document.getElementById('album-modal').classList.add('active');
+
+            if (id) {
+                fetch(`/api/albums/${id}`)
+                    .then(r => r.json())
+                    .then(data => {
+                        document.getElementById('album-title').value = data.title;
+                        document.getElementById('album-artist').value = data.artist;
+                        document.getElementById('album-release-date').value = data.release_date;
+                        document.getElementById('album-genre').value = data.genre;
+                        document.getElementById('album-label').value = data.label;
+                        document.getElementById('album-rating').value = data.rating;
+                        document.getElementById('album-country').value = data.country;
+                    });
+            }
+        }
+
+        function editAlbum(id) {
+            openAlbumModal(id);
+        }
+
+        async function deleteAlbum(id) {
+            if (!confirm('Удалить этот альбом?')) return;
+
+            const response = await fetch(`/api/albums/${id}`, { method: 'DELETE' });
+            const data = await response.json();
+            showAlert(data.message);
+            loadAlbums();
+        }
+
+        document.getElementById('album-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const albumData = {
+                title: document.getElementById('album-title').value,
+                artist: document.getElementById('album-artist').value,
+                release_date: document.getElementById('album-release-date').value,
+                genre: document.getElementById('album-genre').value,
+                label: document.getElementById('album-label').value,
+                tracks: [
+                    { number: 1, title: "Track 1", duration: "3:00" }
+                ],
+                total_duration: "3:00",
+                rating: parseFloat(document.getElementById('album-rating').value),
+                sales_millions: 0,
+                format: ["CD", "Digital"],
+                country: document.getElementById('album-country').value
+            };
+
+            const url = currentAlbumId ? `/api/albums/${currentAlbumId}` : '/api/albums';
+            const method = currentAlbumId ? 'PUT' : 'POST';
+
+            const response = await fetch(url, {
+                method: method,
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(albumData)
+            });
+
+            const data = await response.json();
+            showAlert(data.message);
+            closeModal('album-modal');
+            loadAlbums();
+        });
+
+        // ===== ОТЧЕТЫ =====
+        async function loadParcelsByStatus() {
+            const response = await fetch('/api/reports/parcels-by-status');
+            const data = await response.json();
+
+            let html = '<table class="data-table"><tr><th>Статус</th><th>Количество</th><th>Общий вес (кг)</th></tr>';
+            data.forEach(item => {
+                html += `<tr><td>${item._id}</td><td>${item.count}</td><td>${item.total_weight.toFixed(2)}</td></tr>`;
+            });
+            html += '</table>';
+            document.getElementById('report-parcels-status').innerHTML = html;
+        }
+
+        async function loadAlbumsByGenre() {
+            const response = await fetch('/api/reports/albums-by-genre');
+            const data = await response.json();
+
+            let html = '<table class="data-table"><tr><th>Жанр</th><th>Количество</th><th>Средний рейтинг</th></tr>';
+            data.forEach(item => {
+                html += `<tr><td>${item._id}</td><td>${item.count}</td><td>${item.avg_rating.toFixed(2)}</td></tr>`;
+            });
+            html += '</table>';
+            document.getElementById('report-albums-genre').innerHTML = html;
+        }
+
+        async function loadCouriersWorkload() {
+            const response = await fetch('/api/reports/couriers-workload');
+            const data = await response.json();
+
+            let html = '<table class="data-table"><tr><th>Курьер</th><th>Всего доставок</th><th>Общий вес (кг)</th></tr>';
+            data.forEach(item => {
+                html += `<tr><td>${item._id}</td><td>${item.total_deliveries}</td><td>${item.total_weight.toFixed(2)}</td></tr>`;
+            });
+            html += '</table>';
+            document.getElementById('report-couriers').innerHTML = html;
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).classList.remove('active');
+        }
+
+        // Загрузка данных при старте
+        loadParcels();
+    </script>
+</body>
+</html>
